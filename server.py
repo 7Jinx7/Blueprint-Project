@@ -44,8 +44,6 @@ ss.listen()
 
 
 def start_connection(c): # taking client as parameter
- 
-
     #Check if Name is entered correctly
     credentials = []
     correct_credentials = False
@@ -53,17 +51,20 @@ def start_connection(c): # taking client as parameter
         msg = "Please enter your name:\n"
         c.send(msg.encode())
         response = c.recv(1024).decode() 
-        pattern = r'^[a-zA-Z]{3,26}$'
+        pattern = re.compile(r'^[a-zA-Z]{3,26}$')
 
-        if re.match( pattern, string= str(response)):
+        cursor.execute("SELECT password FROM User WHERE user = ? ", (response,))
+        result = cursor.fetchone()
+
+        if result:
+            msg =  "Username already exist"
+            c.send(msg.encode())
+        else:
+            #pattern.match(string= str(response)):
             credentials[0] = str(response)
             Name = credentials[0]
             correct_credentials = True
 
-        else:
-            msg = "Name format was incorrect.\n"
-            c.send(msg.encode())
-           
 
     #Check if password is properly formatted
     correct_credentials = False
@@ -72,27 +73,20 @@ def start_connection(c): # taking client as parameter
         msg = "Please enter your Password:\n"
         c.send(msg.encode())
         response = c.recv(1024).decode() 
-        pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$"
+        pattern = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$')
 
-        if(re.match(pattern, str(response))):
+        if(pattern.match(str(response))):
             credentials[1] = str(response)
-            password = credentials[1]
-            #Both Credentials where entered correctly, check if the combo exist in the DB
-            cursor.execute(f"SELECT password FROM User WHERE password = ? ", (password,))
-            result = cursor.fetchone()
-            if result:
-                msg =  "Password already exist"
-                c.send(msg.encode())
-            else:
-                #Does not exist in the DB yet, so we can insert it. Also commiting the changes after and closing the DB 
-
-                cursor.execute(f"INSERT INTO User (username, password) VALUES (?, ?)", (Name, password))
-                conn.commit()
-                conn.close()
-                correct_credentials = True
+            password = credentials[1]          
+        
+            #Does not exist in the DB yet, so we can insert it. Also commiting the changes after and closing the DB 
+            cursor.execute("INSERT INTO User (username, password) VALUES (?, ?)", (Name, password))
+            conn.commit()
+            conn.close()
+            correct_credentials = True
 
         else:
-            msg =  "Please enter the password correctly"
+            msg = "Please enter the password correctly"
             c.send(msg.encode())
 
 while True:
