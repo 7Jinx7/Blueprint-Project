@@ -1,8 +1,34 @@
 import threading # two things happening at once
-import sqlite3
+import sqlite3 as sql
 import hashlib
 import socket # used to establish the connection between client and server
+import re 
 
+
+conn = sql.connect("test_database.db")
+cursor = conn.cursor()
+cursor.execute('''CREATE TABLE IF NOT EXISTS User (
+               username TEXT PRIMARY KEY,
+               password TEXT)''')
+
+cursor.execute("INSERT INTO User (username, password) VALUES ('Karthik', 'Karthik23')")
+# cursor.execute("INSERT INTO User (username, password) VALUES ('Ade', 'Ade24')")
+# cursor.execute("INSERT INTO User (username, password) VALUES ('Ella', 'Ella36')")
+# cursor.execute("INSERT INTO User (username, password) VALUES ('Sanjana', 'Sanjana00')")
+# cursor.execute("INSERT INTO User (username, password) VALUES ('HrithikRoshan', 'Greatest')")
+# cursor.execute("INSERT INTO User (username, password) VALUES ('Hemsworth', 'Handsome')")
+# cursor.execute("INSERT INTO User (username, password) VALUES ('Lebron', 'Goated')")
+
+cursor.execute("SELECT * FROM User")
+rows = cursor.fetchall()
+print(rows)
+
+conn.commit()
+conn.close()
+
+
+""" 
+# - - - - - - -  - - - - - - - - - - - - - --------------------------------------------------------------------------------------------------
 try:
     ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # internet socket, connection oriented protocol (TCP)
     print("[S]: Server socket created")
@@ -14,43 +40,56 @@ server_binding = ("localhost", 9999)
 ss.bind(server_binding)
 ss.listen()
 
-
 def start_connection(c): # taking client as parameter
-    msg = "Welcome to Blueprint squad!"
+    msg = "Please enter your name:"
     c.send(msg.encode())
-    """ reponse = "THANK YOU!"
-                    "no." "im sleepy"
-                    variable. --> we need something to pull the client's response.
-    """
-
     response = c.recv(1024).decode() # 1024 bytes tells us the size / buffer of the content we are recieving so that the socket knows how much to expect
-    print("[S]: Data received from client: " + response)    
-
+    print("[S]: Name received from client: " + response) 
     
-    # DO IN GROUPS INDEPENDENTLY
-    
-    msg = "How are you?" # make own riddle / joke & respond with answer
-    c.send(msg.encode())
+    #Check if Name is entered correctly
+    credentials = []
+    correct_credentials = True
+    while not correct_credentials: 
+        pattern = "^[a-zA-z]{3,26}$" 
+        if(re.match(string= str(response), pattern = r'^[a-zA-z]{3,26}$') is None):
+            msg = "Please enter your Name: \n" 
+            c.send(msg.encode())
+            response = c.recv(1024).decode() # 1024 bytes tells us the size / buffer of the content we are recieving so that the socket knows how much to expect
 
-    response = c.recv(1024).decode()
-    print("[S]: Data received from client: " + response)    
+        else:
+            credentials[0] = str(response)
+            correct_credentials = True
 
-    
-    count = 0
-    while(count < 5): # use loop to send 1, 2, 3, 4, 5 to client
-        c.send(str(count).encode())
-        response = c.recv(1024).decode()
-        print("[S]: Data received from client: " + response)
-        count+-1
+    #Check if password is properly formatted
+    correct_credentials = False
+    while not correct_credentials:
+        pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$" 
+        if(re.match(string= str(response), pattern) is None):
+            msg =  "Please enter the password correctly"
+            c.send(msg.encode())
+            response = c.recv(1024).decode() # 1024 bytes tells us the size / buffer of the content we are recieving so that the socket knows how much to expect
+        else: 
+            credentials[1] = str(response)
+            correct_credentials = True
 
-    print("Done")
+
+#Both Credentials where entered correctly, check if the combo exist in the DB
 
 
+
+
+
+
+#Does not exist in the DB yet, so we can insert it. 
+cursor.execute("INSERT INTO User (username, password) VALUES (f"{credentials[0]}", f"{credentials[1]}")")
+
+            
 while True:
     client, addr = ss.accept()
     t2 = threading.Thread(target=start_connection, args=(client,))
     t2.start()
-
     # Close the server socket
     ss.close()
     exit()
+
+"""
