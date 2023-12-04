@@ -79,7 +79,7 @@ def start_connection(c): # taking client as parameter
             credentials[1] = str(response)
             password = credentials[1]          
         
-            #Does not exist in the DB yet, so we can insert it. Also commiting the changes after and closing the DB 
+            #Does not exist in the DB yet, so w e can insert it. Also commiting the changes after and closing the DB 
             cursor.execute("INSERT INTO User (username, password) VALUES (?, ?)", (Name, password))
             conn.commit()
             conn.close()
