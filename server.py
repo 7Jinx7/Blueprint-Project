@@ -2,7 +2,8 @@ import threading # two things happening at once
 import sqlite3 as sql
 import hashlib
 import socket # used to establish the connection between client and server
-import re 
+import re
+
 
 
 conn = sql.connect("test_database.db")
@@ -19,15 +20,15 @@ cursor.execute("INSERT INTO User (username, password) VALUES ('Karthik', 'Karthi
 # cursor.execute("INSERT INTO User (username, password) VALUES ('Hemsworth', 'Handsome')")
 # cursor.execute("INSERT INTO User (username, password) VALUES ('Lebron', 'Goated')")
 
+
 cursor.execute("SELECT * FROM User")
 rows = cursor.fetchall()
 print(rows)
 
+
 conn.commit()
-conn.close()
 
 
-""" 
 # - - - - - - -  - - - - - - - - - - - - - --------------------------------------------------------------------------------------------------
 try:
     ss = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # internet socket, connection oriented protocol (TCP)
@@ -36,54 +37,64 @@ except socket.error as err:
     print('socket open error: {}\n'.format(err))
     exit()
 
+
 server_binding = ("localhost", 9999)
 ss.bind(server_binding)
 ss.listen()
 
+
 def start_connection(c): # taking client as parameter
-    msg = "Please enter your name:"
-    c.send(msg.encode())
-    response = c.recv(1024).decode() # 1024 bytes tells us the size / buffer of the content we are recieving so that the socket knows how much to expect
-    print("[S]: Name received from client: " + response) 
-    
+ 
+
     #Check if Name is entered correctly
     credentials = []
-    correct_credentials = True
-    while not correct_credentials: 
-        pattern = "^[a-zA-z]{3,26}$" 
-        if(re.match(string= str(response), pattern = r'^[a-zA-z]{3,26}$') is None):
-            msg = "Please enter your Name: \n" 
-            c.send(msg.encode())
-            response = c.recv(1024).decode() # 1024 bytes tells us the size / buffer of the content we are recieving so that the socket knows how much to expect
+    correct_credentials = False
+    while not correct_credentials:
+        msg = "Please enter your name:\n"
+        c.send(msg.encode())
+        response = c.recv(1024).decode() 
+        pattern = r'^[a-zA-Z]{3,26}$'
+
+        if re.match( pattern, string= str(response)):
+            credentials[0] = str(response)
+            Name = credentials[0]
+            correct_credentials = True
 
         else:
-            credentials[0] = str(response)
-            correct_credentials = True
+            msg = "Name format was incorrect.\n"
+            c.send(msg.encode())
+           
 
     #Check if password is properly formatted
     correct_credentials = False
     while not correct_credentials:
-        pattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$" 
-        if(re.match(string= str(response), pattern) is None):
+
+        msg = "Please enter your Password:\n"
+        c.send(msg.encode())
+        response = c.recv(1024).decode() 
+        pattern = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$"
+
+        if(re.match(pattern, str(response))):
+            credentials[1] = str(response)
+            password = credentials[1]
+            #Both Credentials where entered correctly, check if the combo exist in the DB
+            cursor.execute(f"SELECT password FROM User WHERE password = ? ", (password,))
+            result = cursor.fetchone()
+            if result:
+                msg =  "Password already exist"
+                c.send(msg.encode())
+            else:
+                #Does not exist in the DB yet, so we can insert it. Also commiting the changes after and closing the DB 
+
+                cursor.execute(f"INSERT INTO User (username, password) VALUES (?, ?)", (Name, password))
+                conn.commit()
+                conn.close()
+                correct_credentials = True
+
+        else:
             msg =  "Please enter the password correctly"
             c.send(msg.encode())
-            response = c.recv(1024).decode() # 1024 bytes tells us the size / buffer of the content we are recieving so that the socket knows how much to expect
-        else: 
-            credentials[1] = str(response)
-            correct_credentials = True
 
-
-#Both Credentials where entered correctly, check if the combo exist in the DB
-
-
-
-
-
-
-#Does not exist in the DB yet, so we can insert it. 
-cursor.execute("INSERT INTO User (username, password) VALUES (f"{credentials[0]}", f"{credentials[1]}")")
-
-            
 while True:
     client, addr = ss.accept()
     t2 = threading.Thread(target=start_connection, args=(client,))
@@ -92,4 +103,3 @@ while True:
     ss.close()
     exit()
 
-"""
